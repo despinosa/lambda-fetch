@@ -47,7 +47,7 @@ import sqlalchemy.exc as sa_err
 class RelationalConfig(object):
     engine = sa.create_engine(
         os.getenv('SQL_CONN_STRING', ''),
-        max_overflow=5000
+        max_overflow=5
     )
 
     meta = sa.MetaData(engine, reflect=True)
@@ -60,7 +60,7 @@ class DynamoConfig(object):
     database = b3.resource(
         'dynamodb',
         region_name=os.getenv('AWS_REGION_NAME', ''),
-        endpoint_url=os.getenv('endpoint_url', '')
+        endpoint_url=os.getenv('ENDPOINT_URL', '')
     )
     Tweet = database.Table('tweet')
 
