@@ -18,27 +18,37 @@ import os
 import sqlalchemy as sa
 
 
-CONN_STRING = os.getenv('CONN_STRING')
+class RelationalConfig(object):
+    conn_string = os.getenv('CONN_STRING')
 
-ENGINE = sa.create_engine(CONN_STRING, max_overflow=5000)
+    engine = sa.create_engine(conn_string, max_overflow=5000)
 
-META = sa.MetaData(ENGINE, reflect=True)
-Tweet = META.tables(['tweet'])
+    meta = sa.MetaData(engine, reflect=True)
+    Tweet = meta.tables(['tweet'])
 
-SESSION_FACTORY = sa.sessionmaker(bind=ENGINE)
+    session_factory = sa.sessionmaker(bind=engine)
 
 
 def fetch_from_relational(id: int) -> str:
-    session = sa.scoped_session(SESSION_FACTORY)
-    query = sa.select([Tweet.c.content]).where(Tweet.c.id == id)
+    session = sa.scoped_session(RelationalConfig.session_factory)
+    query = sa.select(
+        [RelationalConfig.Tweet.c.content]
+    ).where(RelationalConfig.Tweet.c.id == id)
     logging.debug('executing select: %s', query)
     content = session.execute(query)
     logging.debug('returning: %s', content)
     return content
 
 
-def handler(event, context):
+def fetch_from_dynamo(id: int) -> str:
+    raise NotImplementedError
+
+
+def handler(event, context) -> str:
+    id_ = int(event['id'])
     if event['backend'] == 'relational':
-        return fetch_from_relational(event['id'])
+        return fetch_from_relational(id_)
+    elif event['backend'] == 'dynamo':
+        return fetch_from_dynamo(id_)
     else:
         raise NotImplementedError
